@@ -1,5 +1,7 @@
 .venv
 *.csv
 
+**/__pycache__/
+
 data
 morse_dataset
