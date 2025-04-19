@@ -11,9 +11,24 @@ def rotation_transform(tensor: torch.Tensor):
     return result
 
 
+def make_volume_signal_transform(min_res = 0.2, max_freq = 1):
+    def tr(signal):
+        min_residual = rng.uniform(min_res, 1.0)
+        phase = rng.uniform(0, 1) * np.pi * 2
+        var_freq = rng.uniform(0.1, max_freq)
+        return volume_sinusoid_variation(signal, duration=8, variation_frequency=var_freq, phase = phase, min_residual=min_residual)
+    return tr
 
-def volume_signal_transform(signal: torch.Tensor):
-    min_residual = rng.uniform(0.3, 1.0)
-    phase = rng.uniform(0, 1) * np.pi * 2
-    var_freq = rng.uniform(0.1, 1)
-    return volume_sinusoid_variation(signal, duration=8, variation_frequency=var_freq, phase = phase, min_residual=min_residual)
+def make_noise_signal_transform(min_volume=0, max_volume=1.2):
+    def tr(signal):
+        volume = rng.uniform(min_volume, max_volume)
+        noise = torch.randn_like(signal) * volume
+        return signal + noise
+    return tr
+
+def make_compose_signal_transform(transforms):
+    def tr(signal):
+        for transform in transforms:
+            signal = transform(signal)
+        return signal
+    return tr
