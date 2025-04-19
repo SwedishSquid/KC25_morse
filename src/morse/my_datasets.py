@@ -55,10 +55,11 @@ mel_transform = torchaudio.transforms.MelSpectrogram(
 )
 
 
-def generate_dataset(size, signal_transform = lambda x: x, runtime_transform = lambda x: x, show_pbar=True):
+def generate_dataset(size, signal_transform = lambda x: x, runtime_transform = lambda x: x, show_pbar=True, inner_dot_duration_multiplier_range=(0.9, 1.1)):
     mel_specs = []
     messages = []
-    generator = MorseGenerator(carrier_freq_range=carrier_freq_range)
+    generator = MorseGenerator(carrier_freq_range=carrier_freq_range,
+                                inner_dot_duration_multiplier_range=inner_dot_duration_multiplier_range)
     iterator = generator.pure_signals_generator(size)
     if show_pbar:
         iterator = tqdm(iterator, total=size)

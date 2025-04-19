@@ -44,9 +44,11 @@ def normalize_audio(audio_tensor):
 
 
 class MorseGenerator:
-    def __init__(self, carrier_freq_range=(600, 1200), dot_duration_range=(0.04, 0.06), duration=8, sr = 8000):
+    def __init__(self, carrier_freq_range=(600, 1200), dot_duration_range=(0.04, 0.06), 
+                 inner_dot_duration_multiplier_range = (0.9, 1.1), duration=8, sr = 8000):
         self.carrier_freq_range=carrier_freq_range
         self.dot_duration_range=dot_duration_range
+        self.inner_dot_duration_multiplier_range = inner_dot_duration_multiplier_range
         # self.var_freq_bounds = var_freq_bounds
         # self.lowest_min_residual = lowest_min_residual
         self.duration=duration
@@ -66,10 +68,16 @@ class MorseGenerator:
         return 7 * dot_duration
 
     def _generate_signal(self, duration, freq):
+        low_mul, high_mul = self.inner_dot_duration_multiplier_range
+        variation = torch.rand(1).item() * (high_mul - low_mul) + low_mul
+        duration  * variation
         t = torch.linspace(0, duration, int(duration * self.sample_rate), dtype=torch.float32)
         return torch.sin(2 * torch.pi * freq * t)
     
     def _generate_silence(self, duration):
+        low_mul, high_mul = self.inner_dot_duration_multiplier_range
+        variation = torch.rand(1).item() * (high_mul - low_mul) + low_mul
+        duration  * variation
         return torch.zeros(int(duration * self.sample_rate), dtype=torch.float32)
 
     def _generate_morse_element(self, symbol, freq, dot_duration):
