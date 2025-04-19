@@ -1,5 +1,9 @@
 import torch
 from pathlib import Path
+import torchaudio
+from morse.generators import MorseGenerator
+from tqdm import tqdm
+import librosa
 
 
 class ListDataset(torch.utils.data.Dataset):
@@ -29,3 +33,53 @@ def filenames_to_torch(filenames):
     for name in filenames:
         yield Path(name).with_suffix('.pt')
 
+
+def normalize_mel_spec(mel_spec: torch.Tensor):
+    return mel_spec / torch.max(mel_spec)
+
+
+sample_rate = 8000
+n_mels = 64
+n_fft = 512
+hop_length = n_fft // 4
+
+carrier_freq_range=(100, 2400)
+
+
+mel_transform = torchaudio.transforms.MelSpectrogram(
+    sample_rate=sample_rate,
+    n_mels=n_mels,
+    n_fft=n_fft,
+    hop_length=hop_length,
+    normalized=True
+)
+
+
+def generate_dataset(size, signal_transform = lambda x: x, runtime_transform = lambda x: x):
+    mel_specs = []
+    messages = []
+    generator = MorseGenerator(carrier_freq_range=carrier_freq_range)
+    for pure_signal, message in tqdm(generator.pure_signals_generator(size), total=size):
+        transformed_signal = signal_transform(pure_signal)
+        mel = mel_transform(transformed_signal)
+        assert mel.ndim == 2
+        assert mel.shape[1] == 501
+        mel = normalize_mel_spec(mel)
+        mel_specs.append(mel)
+        messages.append(message)
+    return ListDataset(mel_specs, messages, runtime_transform)
+
+
+def read_dataset_from_files(audio_dir, filenames, labels, signal_transform = lambda x: x, runtime_transform = lambda x: x):
+    mel_specs = []
+    for name in tqdm(filenames):
+        signal, sr = librosa.load(Path(audio_dir, name), sr=None)
+        assert sr == 8000
+        signal = torch.as_tensor(signal)
+        signal = signal_transform(signal)
+        mel = mel_transform(signal)
+        mel = normalize_mel_spec(mel)
+        assert mel.ndim == 2
+        mel_specs.append(mel)
+    assert len(mel_specs) == len(labels)
+    return ListDataset(mel_specs, labels, transform=runtime_transform)

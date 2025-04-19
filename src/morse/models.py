@@ -49,6 +49,8 @@ class MySomething(nn.Module):
 
 
 
+
+
 # class CNNResidualBlockCasualNormDropoutOrder(nn.Module):
 #     def __init__(self, d_model, d_inner, dropout=0.1, apply_post_residual_nonlinearity=False):
 #         super().__init__()
@@ -303,3 +305,31 @@ class CNNTransformer(nn.Module):
 #         # Classifier
 #         x = x.permute(1, 2, 0)  # (batch, channels, seq_len)
 #         return self.classifier(x)
+
+
+class SimpleCNN(nn.Module):
+    def __init__(self, d_input, d_model, d_inner, d_output,
+                 n_pools, n_blocks_before_pool,
+                 pooling_overlap=False,
+                 dropout=0.1):
+        super().__init__()
+        self.cnn = nn.Sequential(
+            nn.Conv1d(d_input, d_model, kernel_size=3, padding=1),
+            nn.BatchNorm1d(d_model),
+            nn.ReLU(),
+            *[
+                nn.Sequential(
+                    *[CNNResidualBlock(d_model=d_model, d_inner=d_inner, dropout=dropout) for j in range(n_blocks_before_pool)],
+                    PoolingTransition(overlap=pooling_overlap)
+                )
+                for i in range(n_pools)
+            ]
+        )
+        self.head = CTCHead(d_model, d_output)
+    
+    def forward(self, x: torch.Tensor):
+        # [batch, channels, seq_len]
+        x = self.cnn(x)
+        # [batch, channels, seq_len]
+        out = self.head(x)
+        return out
