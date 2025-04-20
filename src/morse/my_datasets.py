@@ -43,7 +43,7 @@ hop_length = n_fft // 4
 carrier_freq_range=(100, 2400)
 
 
-mel_transform = torchaudio.transforms.MelSpectrogram(
+signal_to_mel_transform = torchaudio.transforms.MelSpectrogram(
     sample_rate=sample_rate,
     n_mels=n_mels,
     n_fft=n_fft,
@@ -52,7 +52,8 @@ mel_transform = torchaudio.transforms.MelSpectrogram(
 )
 
 
-def generate_dataset(size, signal_transform = lambda x: x, runtime_transform = lambda x: x, show_pbar=True, inner_dot_duration_multiplier_range=(0.9, 1.1)):
+def generate_dataset(size, signal_transform = lambda x: x, mel_spec_transform = lambda x: x,
+                     runtime_transform = lambda x: x, show_pbar=True, inner_dot_duration_multiplier_range=(0.9, 1.1)):
     mel_specs = []
     messages = []
     generator = MorseGenerator(carrier_freq_range=carrier_freq_range,
@@ -62,16 +63,17 @@ def generate_dataset(size, signal_transform = lambda x: x, runtime_transform = l
         iterator = tqdm(iterator, total=size)
     for pure_signal, message in iterator:
         transformed_signal = signal_transform(pure_signal)
-        mel = mel_transform(transformed_signal)
+        mel = signal_to_mel_transform(transformed_signal)
         assert mel.ndim == 2
-        # assert mel.shape[1] == 501
         mel = normalize_mel_spec(mel)
+        mel = mel_spec_transform(mel)
         mel_specs.append(mel)
         messages.append(message)
     return ListDataset(mel_specs, messages, runtime_transform)
 
 
-def read_dataset_from_files(audio_dir, filenames, labels, signal_transform = lambda x: x, runtime_transform = lambda x: x, show_pbar=True):
+def read_dataset_from_files(audio_dir, filenames, labels, signal_transform = lambda x: x, mel_spec_transform = lambda x: x,
+                             runtime_transform = lambda x: x, show_pbar=True):
     mel_specs = []
     iterator = filenames
     if show_pbar:
@@ -81,8 +83,9 @@ def read_dataset_from_files(audio_dir, filenames, labels, signal_transform = lam
         assert sr == 8000
         signal = torch.as_tensor(signal)
         signal = signal_transform(signal)
-        mel = mel_transform(signal)
+        mel = signal_to_mel_transform(signal)
         mel = normalize_mel_spec(mel)
+        mel = mel_spec_transform(mel)
         assert mel.ndim == 2
         mel_specs.append(mel)
     assert len(mel_specs) == len(labels)
