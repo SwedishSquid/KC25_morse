@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn.functional as F
 from morse.generators import volume_sinusoid_variation
 
 
@@ -62,4 +63,9 @@ def make_compose_transform(transforms):
         for transform in transforms:
             signal = transform(signal)
         return signal
+    return tr
+
+def make_mel_pad_augmentation(pad=(0, 11)):
+    def tr(mel):
+        return F.pad(mel, pad=pad)
     return tr

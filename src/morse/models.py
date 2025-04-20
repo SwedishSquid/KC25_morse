@@ -243,70 +243,6 @@ class CNNTransformer(nn.Module):
 
 
 
-        
-
-
-# class TransformerBlock(nn.Module):
-#     def __init__(self, dim, num_heads=4, ff_dim=256, dropout=0.1):
-#         super().__init__()
-#         self.attn = nn.MultiheadAttention(dim, num_heads, dropout=dropout)
-#         self.norm1 = nn.LayerNorm(dim)
-#         self.ff = nn.Sequential(
-#             nn.Linear(dim, ff_dim),
-#             nn.ReLU(),
-#             nn.Dropout(dropout),
-#             nn.Linear(ff_dim, dim),
-#             nn.Dropout(dropout)
-#         )
-#         self.norm2 = nn.LayerNorm(dim)
-        
-#     def forward(self, x):
-#         # x shape: (seq_len, batch, features)
-#         attn_out, _ = self.attn(x, x, x)
-#         x = self.norm1(x + attn_out)
-#         ff_out = self.ff(x)
-#         return self.norm2(x + ff_out)
-
-# class CNNTransformerModel(nn.Module):
-#     def __init__(self, input_size=64, inner_size=64, output_size=5):
-#         super().__init__()
-#         # CNN feature extractor
-#         self.cnn = nn.Sequential(
-#             nn.Conv1d(input_size, inner_size, 3, padding=1),
-#             nn.ReLU(),
-#             nn.BatchNorm1d(inner_size),
-#             nn.MaxPool1d(2, stride=2),
-#             nn.Conv1d(inner_size, inner_size, 3, padding=1),
-#             nn.ReLU(),
-#             nn.BatchNorm1d(inner_size),
-#             nn.MaxPool1d(2, stride=2)
-#         )
-        
-#         # Transformer
-#         self.transformer = TransformerBlock(inner_size)
-        
-#         # Classifier
-#         self.classifier = nn.Sequential(
-#             # nn.AdaptiveAvgPool1d(1),
-#             # nn.Flatten(),
-#             nn.Linear(inner_size, output_size)
-#         )
-        
-#     def forward(self, x):
-#         # CNN feature extraction
-#         x = self.cnn(x)  # (batch, channels, seq_len)
-        
-#         # Prepare for transformer
-#         x = x.permute(2, 0, 1)  # (seq_len, batch, channels)
-        
-#         # Transformer
-#         x = self.transformer(x)
-        
-#         # Classifier
-#         x = x.permute(1, 2, 0)  # (batch, channels, seq_len)
-#         return self.classifier(x)
-
-
 class SimpleCNN(nn.Module):
     def __init__(self, d_input, d_model, d_inner, d_output,
                  n_pools, n_blocks_before_pool,
@@ -333,3 +269,6 @@ class SimpleCNN(nn.Module):
         # [batch, channels, seq_len]
         out = self.head(x)
         return out
+
+
+
