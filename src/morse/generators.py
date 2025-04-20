@@ -30,17 +30,17 @@ def volume_sinusoid_variation(signal, duration, variation_frequency: float, phas
     return signal * volume_multiplier
 
 
-def mean_normalize(audio_tensor):
-    mean = torch.mean(audio_tensor)
-    return audio_tensor - mean
+# def mean_normalize(audio_tensor):
+#     mean = torch.mean(audio_tensor)
+#     return audio_tensor - mean
 
-def peak_normalize(audio_tensor):
-    max_val = torch.max(torch.abs(audio_tensor))
-    return audio_tensor / max_val
+# def peak_normalize(audio_tensor):
+#     max_val = torch.max(torch.abs(audio_tensor))
+#     return audio_tensor / max_val
 
 
-def normalize_audio(audio_tensor):
-    return peak_normalize(mean_normalize(audio_tensor))
+# def normalize_audio(audio_tensor):
+#     return peak_normalize(mean_normalize(audio_tensor))
 
 
 class MorseGenerator:
@@ -131,7 +131,7 @@ class MorseGenerator:
     #     return signals, messages
     
     def pure_signals_generator(self, size):
-        for i in tqdm(range(size)):
+        for i in range(size):
             out = None
             message = None
             while out == None:

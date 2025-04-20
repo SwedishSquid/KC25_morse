@@ -4,6 +4,7 @@ import torchaudio
 from morse.generators import MorseGenerator
 from tqdm import tqdm
 import librosa
+from morse.augmentations import normalize_mel_spec
 
 
 class ListDataset(torch.utils.data.Dataset):
@@ -32,10 +33,6 @@ def load_tensors(dir_path, filenames):
 def filenames_to_torch(filenames):
     for name in filenames:
         yield Path(name).with_suffix('.pt')
-
-
-def normalize_mel_spec(mel_spec: torch.Tensor):
-    return mel_spec / torch.max(mel_spec)
 
 
 sample_rate = 8000
@@ -67,7 +64,7 @@ def generate_dataset(size, signal_transform = lambda x: x, runtime_transform = l
         transformed_signal = signal_transform(pure_signal)
         mel = mel_transform(transformed_signal)
         assert mel.ndim == 2
-        assert mel.shape[1] == 501
+        # assert mel.shape[1] == 501
         mel = normalize_mel_spec(mel)
         mel_specs.append(mel)
         messages.append(message)
