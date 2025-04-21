@@ -22,12 +22,10 @@ class ListDataset(torch.utils.data.Dataset):
         return self.transform(self.features[index]), self.labels[index]
 
 
-
 def load_tensors(dir_path, filenames):
     for name in filenames:
         path = Path(dir_path, name)
         yield torch.load(path, weights_only=True)
-
 
 
 def filenames_to_torch(filenames):
@@ -85,6 +83,21 @@ def read_dataset_from_files(audio_dir, filenames, labels, signal_transform = lam
         signal = signal_transform(signal)
         mel = signal_to_mel_transform(signal)
         mel = normalize_mel_spec(mel)
+        mel = mel_spec_transform(mel)
+        assert mel.ndim == 2
+        mel_specs.append(mel)
+    assert len(mel_specs) == len(labels)
+    return ListDataset(mel_specs, labels, transform=runtime_transform)
+
+
+def read_mel_dataset_from_files(mels_dir, filenames, labels, mel_spec_transform = lambda x: x, 
+                                runtime_transform = lambda x: x, show_pbar=True):
+    mel_specs = []
+    iterator = filenames
+    if show_pbar:
+        iterator = tqdm(iterator)
+    for name in iterator:
+        mel = torch.load(Path(mels_dir, name), weights_only=True)
         mel = mel_spec_transform(mel)
         assert mel.ndim == 2
         mel_specs.append(mel)
