@@ -40,7 +40,7 @@ n_mels = 64
 n_fft = 512
 hop_length = n_fft // 4
 
-carrier_freq_range=(100, 2400)
+carrier_freq_range=(100, 1600)
 
 
 signal_to_mel_transform = torchaudio.transforms.MelSpectrogram(

@@ -69,3 +69,24 @@ def make_mel_pad_augmentation(pad=(0, 11)):
     def tr(mel):
         return F.pad(mel, pad=pad)
     return tr
+
+def make_mel_feature_extraction_transform(out_channels):
+    def tr(mel):
+        idx = torch.argmax(torch.mean(mel, dim=1))
+        left = out_channels // 2
+        right = out_channels - left
+        from_idx, to_idx = idx - left, idx + right
+        if from_idx < 0:
+            from_idx = 0
+            to_idx = out_channels
+        elif to_idx > mel.shape[0]:
+            to_idx = mel.shape[0]
+            from_idx = mel.shape[0] - out_channels
+        return mel[from_idx:to_idx, :]
+    return tr
+
+def make_mel_tail_zeroing_transform(n_last_channels_to_zero=16):
+    def tr(mel):
+        mel[-n_last_channels_to_zero:, :] = 0
+        return mel
+    return tr
