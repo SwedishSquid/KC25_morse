@@ -48,37 +48,6 @@ class MySomething(nn.Module):
         return self.estimator(x)
 
 
-
-
-
-# class CNNResidualBlockCasualNormDropoutOrder(nn.Module):
-#     def __init__(self, d_model, d_inner, dropout=0.1, apply_post_residual_nonlinearity=False):
-#         super().__init__()
-#         self.apply_post_residual_nonlinearity = apply_post_residual_nonlinearity
-#         self.cell = nn.Sequential(
-#             nn.Conv1d(d_model, d_inner, kernel_size=3, padding=1),
-#             nn.BatchNorm1d(d_inner),
-#             nn.ReLU(),
-#             nn.Dropout(p=dropout),
-#             nn.Conv1d(d_inner, d_model, kernel_size=3, padding=1),
-#             nn.BatchNorm1d(d_model),
-#             nn.ReLU(),
-#             nn.Dropout(p=dropout),
-#         )
-#         self.post_residual_nonlinearity = nn.Sequential(
-#             nn.BatchNorm1d(d_model),
-#         )
-#         pass
-
-#     def forward(self, x):
-#         # [batch, channels, seq_len]
-#         out = x + self.cell(x)
-#         if self.apply_post_residual_nonlinearity:
-#             return self.post_residual_nonlinearity(out)
-#         return out
-
-
-
 class CNNResidualBlock(nn.Module):
     def __init__(self, d_model, d_inner, dropout=0.1, apply_post_norm=False):
         super().__init__()
@@ -271,4 +240,58 @@ class SimpleCNN(nn.Module):
         return out
 
 
+class PartialFlatUNetBlock(nn.Module):
+    def __init__(self, n_down, n_up, 
+                 make_regular_block,
+                 central_block,
+                 make_downsample_transition,
+                 make_upsample_transition):
+        super().__init__()
+        self.down_compute_blocks = nn.ModuleList([make_regular_block() for _ in range(n_down)])
+        self.downsample_transitions = nn.ModuleList([make_downsample_transition() for _ in range(n_down)])
+        self.central_block = central_block
+        self.up_compute_blocks = nn.ModuleList([make_regular_block() for _ in range(n_up)])
+        self.upsample_transitions = nn.ModuleList([make_upsample_transition() for _ in range(n_up)])
+        pass
 
+    def forward(self, x: torch.Tensor):
+        residuals = []
+        for d_comp_block, downsample in zip(self.down_compute_blocks, self.downsample_transitions):
+            outs = d_comp_block(x)
+            residuals.append(outs)
+            x = downsample(outs)
+        
+        x = self.central_block(x)
+
+        for i, (u_comp_block, upsample) in enumerate(zip(self.up_compute_blocks, self.upsample_transitions)):
+            res = residuals[-i - 1]
+            upsampled = upsample(x)
+            print(res.shape, upsampled.shape)
+            inputs = res + upsampled
+            x = u_comp_block(inputs)
+        
+        return x
+
+
+class UNetModel(nn.Module):
+    def __init__(self, d_input, d_model, d_output, n_down, n_up, make_regular_block, central_block, dropout=0.1):
+        super().__init__()
+        self.input_adapter = nn.Sequential(
+            nn.Conv1d(d_input, d_model, kernel_size=3, padding=1),
+            nn.BatchNorm1d(d_model),
+            nn.ReLU(),
+        )
+        self.unet = PartialFlatUNetBlock(
+            n_down=n_down, n_up=n_up, make_regular_block=make_regular_block, central_block=central_block, 
+            make_downsample_transition=lambda: nn.Conv1d(d_model, d_model, kernel_size=2, stride=2, padding=0), 
+            make_upsample_transition=lambda: nn.ConvTranspose1d(in_channels=d_model, out_channels=d_model, kernel_size=2, stride=2,
+                                                                padding=0)
+        )
+        self.head = CTCHead(d_model, d_output)
+        pass
+
+    def forward(self, x):
+        x = self.input_adapter(x)
+        x = self.unet(x)
+        x = self.head(x)
+        return x
