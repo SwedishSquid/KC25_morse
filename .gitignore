@@ -8,3 +8,5 @@ morse_dataset
 
 
 models/ignored
+
+src/wandb
