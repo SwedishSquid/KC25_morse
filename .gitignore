@@ -10,3 +10,5 @@ morse_dataset
 models/ignored
 
 src/wandb
+
+!replicated_submission.csv

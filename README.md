@@ -10,7 +10,9 @@
 - [`kc25-synthetic-fe-train.ipynb`](./kaggle_notebooks/kc25-synthetic-fe-train.ipynb) - предобучение на синтетических данных
 - [`kc25-real-tune.ipynb`](./kaggle_notebooks/kc25-real-tune.ipynb) - тюнинг на реальных данных
 
-есть requirements.txt - сгенерирован в kaggle ноутбуке со всеми зависимостями
+есть ```requirements.txt``` - сгенерирован в kaggle ноутбуке со всеми зависимостями
+
+ссылка на этот репозиторий https://github.com/SwedishSquid/KC25_morse
 
 ## Описание решения
 
@@ -18,7 +20,7 @@
 
 отправил результат в kaggle как late submission. результат чуть хуже, чем финальный, но не катастрофично
 
-replicated_submission.csv прикладываю
+```replicated_submission.csv``` прикладываю
 
 ### обработка данных
 
